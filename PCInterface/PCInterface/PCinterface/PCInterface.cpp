@@ -114,6 +114,7 @@ unsigned int PCinterface::getData( unsigned char data[] ) // array must be 512 b
 //=============================================================
 bool PCinterface::handleCMD()
 {
+	DDRA = 0x00000000;
 	unsigned char datablock[512];
 	for ( int i = 0; i<512; i++) {
 		datablock[i] = 0x00;
@@ -137,6 +138,12 @@ bool PCinterface::handleCMD()
 					break;
 		case 3: // tjek kode 0 bytes data;
 				// tjek kode pin ( low = korrekt kode) og returner til PC hvad resultatet er.
+					if( (PINA & 0b00000001) == 0) { // PORTA 0
+						
+						uartPointer->sendChar(0x01);	
+					} else {
+						uartPointer->sendChar(0x00);
+					}
 					break;
 		case 4: // anmod om fejl log // ej implementeret
 					// ignorer
