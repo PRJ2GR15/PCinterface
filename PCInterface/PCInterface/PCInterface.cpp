@@ -22,6 +22,10 @@ PCinterface PCIF_obj(&handler_obj ,&uart_obj);
 
 int main(void)
 {
+	unsigned char Array[512] = { 0 };
+	for (int i = 0; i < 101; i++){
+		SD_obj.writeBlock(i, Array);
+	}	
     while(1)
     {
 		sei();
@@ -31,5 +35,5 @@ int main(void)
 ISR (USART0_RX_vect)
 {
 	PCIF_obj.handleCMD();
-	uart_obj.sendChar(0xAB);
+	//uart_obj.sendChar(0xAB);
 }

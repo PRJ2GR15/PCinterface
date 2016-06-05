@@ -20,10 +20,10 @@
 // DESCR. : constructor, initalizes the pc interface, takes 3 object pointers 
 // to the drivers needed.
 //=============================================================
- PCinterface::PCinterface( UnitHandler *Handler_obj, UART *uart_obj )
+ PCinterface::PCinterface( UnitHandler *Handler_obj, UART *uart_obj, rtc *rtc_obj )
 {
 	uartPointer = uart_obj;
-	rtc_obj_pointer = rtc_obj_pointer;
+	rtc_obj_pointer = rtc_obj;
 	UnitHandlerPointer = Handler_obj;
 	
 }
@@ -57,7 +57,7 @@ unsigned char PCinterface::getCmd(unsigned char bytes[2])
 	{
 		unsigned char cmd = uartPointer->readChar();
 		if(cmd > 0 && cmd < 0x0B){
-			uartPointer->sendChar(0x0F);
+			//uartPointer->sendChar(0x0F);
 		} 
 		else
 		{
@@ -166,13 +166,13 @@ bool PCinterface::handleCMD()
 						}
 						for ( int h = 1; h < 8; h++ ){
 							UnitHandlerPointer->getTimeTable(h, unitID, datablock);
-							uartPointer->sendChar(0xF0);
-							uartPointer->sendChar(0xF0);
+						//	uartPointer->sendChar(0xF0);
+						//	uartPointer->sendChar(0xF0);
 							for ( int t = 0; t < 512; t++){
 								uartPointer->sendChar(datablock[t]);
 							}
-							uartPointer->sendChar(0x0F);
-							uartPointer->sendChar(0x0F);
+						//	uartPointer->sendChar(0x0F);
+						//	uartPointer->sendChar(0x0F);
 						}
 					}
 					uartPointer->sendChar(0xFA);
@@ -182,6 +182,7 @@ bool PCinterface::handleCMD()
 					break;
 		
 		case 7: // Enhedsinfo fra PC til styreboks 4 til 512 bytes; ack for hver byte efter cmd
+			
 			if(getData(datablock) > 3)
 			{
 				if(datablock[1] == 0x00)
@@ -192,6 +193,7 @@ bool PCinterface::handleCMD()
 				{
 					UnitHandlerPointer->AddUnit(datablock[0], datablock[1]);
 				}
+				uartPointer->sendChar(0x0F);
 			}		
 					break;
 		case 8: // slet enhed 1 byte;
