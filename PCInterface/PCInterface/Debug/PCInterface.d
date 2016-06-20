@@ -21,7 +21,9 @@ PCInterface.d PCInterface.o: .././PCInterface.cpp \
  .././UnitHandler/../sd/sdCard.h .././UnitHandler/../sd/../SPI/SPI.h \
  .././PCinterface/PCinterface.h .././PCinterface/../Uart/uartDriver.h \
  .././PCinterface/../RTC/rtc.h .././PCinterface/../RTC/../i2c/i2c.h \
- .././PCinterface/../UnitHandler/UnitHandler.h
+ .././PCinterface/../UnitHandler/UnitHandler.h \
+ .././PCinterface/../X10/X10.h .././PCinterface/../X10/X10_modtager.h \
+ .././PCinterface/../X10/X10_sender.h .././X10/X10.h
 
 c:\program\ files\ (x86)\atmel\atmel\ studio\ 6.0\extensions\atmel\avrgcc\3.4.1.95\avrtoolchain\bin\../lib/gcc/avr/4.6.2/../../../../avr/include/avr/io.h:
 
@@ -76,3 +78,11 @@ c:\program\ files\ (x86)\atmel\atmel\ studio\ 6.0\extensions\atmel\avrgcc\3.4.1.
 .././PCinterface/../RTC/../i2c/i2c.h:
 
 .././PCinterface/../UnitHandler/UnitHandler.h:
+
+.././PCinterface/../X10/X10.h:
+
+.././PCinterface/../X10/X10_modtager.h:
+
+.././PCinterface/../X10/X10_sender.h:
+
+.././X10/X10.h:

@@ -39,7 +39,8 @@ SUBDIRS :=  \
 ../SPI \
 ../SD \
 ../UnitHandler \
-../Uart
+../Uart \
+../X10/
 
 
 # Add inputs and outputs from these tool invocations to the build variables 
@@ -51,7 +52,10 @@ C_SRCS +=  \
 ../SD/sdCard.cpp \
 ../SPI/SPI.cpp \
 ../Uart/uartDriver.cpp \
-../UnitHandler/UnitHandler.cpp
+../UnitHandler/UnitHandler.cpp \
+../X10/X10.cpp \
+../X10/X10_modtager.cpp \
+../X10/X10_sender.cpp
 
 
 PREPROCESSING_SRCS += 
@@ -68,7 +72,10 @@ RTC/rtc.o \
 SD/sdCard.o \
 SPI/SPI.o \
 Uart/uartDriver.o \
-UnitHandler/UnitHandler.o
+UnitHandler/UnitHandler.o \
+X10/X10.o \
+X10/X10_modtager.o \
+X10/X10_sender.o
 
 
 OBJS_AS_ARGS +=  \
@@ -79,7 +86,10 @@ RTC/rtc.o \
 SD/sdCard.o \
 SPI/SPI.o \
 Uart/uartDriver.o \
-UnitHandler/UnitHandler.o
+UnitHandler/UnitHandler.o \
+X10/X10.o \
+X10/X10_modtager.o \
+X10/X10_sender.o
 
 
 C_DEPS +=  \
@@ -90,7 +100,10 @@ RTC/rtc.d \
 SD/sdCard.d \
 SPI/SPI.d \
 Uart/uartDriver.d \
-UnitHandler/UnitHandler.d
+UnitHandler/UnitHandler.d \
+X10/X10.d \
+X10/X10_modtager.d \
+X10/X10_sender.d
 
 
 C_DEPS_AS_ARGS +=  \
@@ -101,7 +114,10 @@ RTC/rtc.d \
 SD/sdCard.d \
 SPI/SPI.d \
 Uart/uartDriver.d \
-UnitHandler/UnitHandler.d
+UnitHandler/UnitHandler.d \
+X10/X10.d \
+X10/X10_modtager.d \
+X10/X10_sender.d
 
 
 OUTPUT_FILE_PATH +=PCInterface.elf
@@ -113,6 +129,12 @@ ADDITIONAL_DEPENDENCIES:=
 OUTPUT_FILE_DEP:= ./makedep.mk
 
 # AVR32/GNU C Compiler
+
+
+
+
+
+
 
 
 
@@ -173,6 +195,12 @@ Uart/%.o: ../Uart/%.cpp
 	@echo Finished building: $<
 
 UnitHandler/%.o: ../UnitHandler/%.cpp
+	@echo Building file: $<
+	@echo Invoking: AVR8/GNU C++ Compiler : (AVR_8_bit_GNU_Toolchain_3.4.1_830) 4.6.2
+	$(QUOTE)C:\Program Files (x86)\Atmel\Atmel Studio 6.0\extensions\Atmel\AVRGCC\3.4.1.95\AVRToolchain\bin\avr-g++.exe$(QUOTE) -funsigned-char -funsigned-bitfields -O1 -fpack-struct -fshort-enums -g2 -Wall -c -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"  -mmcu=atmega2560   -o"$@" "$<" 
+	@echo Finished building: $<
+
+X10/%.o: ../X10/%.cpp
 	@echo Building file: $<
 	@echo Invoking: AVR8/GNU C++ Compiler : (AVR_8_bit_GNU_Toolchain_3.4.1_830) 4.6.2
 	$(QUOTE)C:\Program Files (x86)\Atmel\Atmel Studio 6.0\extensions\Atmel\AVRGCC\3.4.1.95\AVRToolchain\bin\avr-g++.exe$(QUOTE) -funsigned-char -funsigned-bitfields -O1 -fpack-struct -fshort-enums -g2 -Wall -c -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"  -mmcu=atmega2560   -o"$@" "$<" 

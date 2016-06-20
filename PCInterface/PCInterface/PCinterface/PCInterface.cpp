@@ -20,12 +20,12 @@
 // DESCR. : constructor, initalizes the pc interface, takes 3 object pointers 
 // to the drivers needed.
 //=============================================================
- PCinterface::PCinterface( UnitHandler *Handler_obj, UART *uart_obj, rtc *rtc_obj )
+ PCinterface::PCinterface( UnitHandler *Handler_obj, UART *uart_obj, rtc *rtc_obj, X10 *x10_obj )
 {
 	uartPointer = uart_obj;
 	rtc_obj_pointer = rtc_obj;
 	UnitHandlerPointer = Handler_obj;
-	
+	x10Pointer = x10_obj;
 }
 
 //=============================================================
@@ -124,6 +124,7 @@ bool PCinterface::handleCMD()
 	unsigned long blockAdress;
 	unsigned char unitID = 0x00; // til at gemme unit Id
 	unsigned char my_unit_count = 0;
+	bool unitstatus = false; // variable for storing unit status
 	int numberoffields = 0;
 	switch(cmd)
 	{
@@ -134,8 +135,8 @@ bool PCinterface::handleCMD()
 					break;
 		case 2: // PC frakoblet 0 bytes data;
 					// sæt register i main ( PC bit low)
-					PCconnectionStatus = false;
-					uartPointer->sendChar(0x0F);
+					PCconnectionStatus = false; // set Connection status flag to false
+					uartPointer->sendChar(0x0F); // reply to PC
 					break;
 		case 3: // tjek kode 0 bytes data;
 				// tjek kode pin ( low = korrekt kode) og returner til PC hvad resultatet er.
@@ -149,15 +150,34 @@ bool PCinterface::handleCMD()
 					// ignorer
 					break;
 		case 5: // Anmod om enhedsstatus 1 byte: enhedsadresse;
-					
+					if(getData(datablock) == 1){ // try to read a data part of uart communication 
+						if(x10Pointer->getUnitStatus(datablock[0], unitstatus)) // get status from unit and store it into unitstatus
+						{
+							if(unitstatus == true){ // return true response
+								uartPointer->sendChar(0x01);
+							}
+							else // handles false
+							{
+								uartPointer->sendChar(0x00);
+							}
+						}
+						else {
+							// location for adding error handling
+							// currently just sets status to false
+							uartPointer->sendChar(0x00);
+						}
+					}
+					else {
+						uartPointer->sendChar(0x00); // in case no data is read. should have some kind of better  error handling here.
+					}
 					break; // ikke implementeret i pc software endnnu
 		case 6:  // Hent Enhed Returner enhedsinfo for næste enhed i rækket, start enhed 1.
 					//Når ikke flere enheder:
 					//Err cmd.
-					my_unit_count = UnitHandlerPointer->getUnitCount();
+					my_unit_count = UnitHandlerPointer->getUnitCount(); // get number of units added to the system.
 					if(my_unit_count == 0) // hvis der ikke er nogen enheder tilføjet systemet.
 					{
-						datablock[4] = 0x00;
+						datablock[4] = 0x00; // set to zero since this is what the pc uses to check if theres no units.
 						for(int i = 0; i<512; i++)
 						{
 							
@@ -168,7 +188,7 @@ bool PCinterface::handleCMD()
 					{// hent antal af enheder
 						for ( unsigned char i = 1; i <= my_unit_count; i++){ // handle each unit ;)
 							UnitHandlerPointer->getUnitList(unitListArray); // get unit list
-							for(int j = 0; j<512; j++){
+							for(int j = 0; j<512; j++){ 
 								if(j%2 != 0){
 									if(unitListArray[j] == i){
 										unsigned char id = j - 1;
@@ -192,7 +212,7 @@ bool PCinterface::handleCMD()
 					}
 				break;
 		case 7: // Enhedsinfo fra PC til styreboks 4 til 512 bytes; ack for hver byte efter cmd
-			if(getData(datablock) == 2)
+			if(getData(datablock) == 2) // get two bytes of data
 			{
 				if(datablock[1] == 0x00)
 				{
@@ -291,16 +311,6 @@ bool PCinterface::handleCMD()
 			// ikke implementereret i pc software.
 			break;
 	}
-}
-//=============================================================
-// METHOD : returnStatus
-// DESCR. : takes the unitID and the recieved status and returns it to
-// the PC software through UART.
-//=============================================================
-void PCinterface::returnStatus( unsigned char unitID, unsigned char status )
-{
-	
-	// implementation missing.
 }
 
 
