@@ -12,7 +12,7 @@
 
 #ifndef PCINTERFACE_H_
 #define PCINTERFACE_H_
-#include "../Uart/uartDriver.h";
+#include "../Uart/uartDriver.h"s
 #include "../RTC/rtc.h"
 #include "../UnitHandler/UnitHandler.h"
 
@@ -29,6 +29,7 @@ public:
 	bool isStart( unsigned char bytes[]); // send in a 2 byte array;
 	bool handleCMD();
 	bool setTime();
+	void returnStatus(unsigned char unitID, unsigned char status); // used for returning unitstatus reponses to the pc.
 	bool PCconnectionStatus;
 private:
 	rtc * rtc_obj_pointer;

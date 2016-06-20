@@ -82,12 +82,11 @@ unsigned int PCinterface::getData( unsigned char data[] ) // array must be 512 b
 	unsigned char byte2 = 0;
 	for( int i = 0; i<512; i++){
 		byte = uartPointer->readChar();	
-		uartPointer->sendChar(0x0F); // transmit ACK;
+		//uartPointer->sendChar(0x0F); // transmit ACK;
 		if(byte == 0x0F)
 		{	
-			
 			byte2 = uartPointer->readChar();
-			uartPointer->sendChar(0x0F); // transmit ACK;
+			//uartPointer->sendChar(0x0F); // transmit ACK;
 			if(byte2 == 0x0F){
 				return databytes;
 			} 
@@ -130,16 +129,17 @@ bool PCinterface::handleCMD()
 	{
 		case 1: // PC tilsluttet 0 bytes data;
 					// sæt register i main ( PC bit high)
-					PCconnectionStatus = true;
+					PCconnectionStatus = true; // set Connection status flag
+					uartPointer->sendChar(0x0F); // reply to PC
 					break;
 		case 2: // PC frakoblet 0 bytes data;
 					// sæt register i main ( PC bit low)
 					PCconnectionStatus = false;
+					uartPointer->sendChar(0x0F);
 					break;
 		case 3: // tjek kode 0 bytes data;
 				// tjek kode pin ( low = korrekt kode) og returner til PC hvad resultatet er.
 					if( (PINA & 0b00000001) == 0) { // PORTA 0
-						
 						uartPointer->sendChar(0x01);	
 					} else {
 						uartPointer->sendChar(0x00);
@@ -149,41 +149,50 @@ bool PCinterface::handleCMD()
 					// ignorer
 					break;
 		case 5: // Anmod om enhedsstatus 1 byte: enhedsadresse;
+					
 					break; // ikke implementeret i pc software endnnu
 		case 6:  // Hent Enhed Returner enhedsinfo for næste enhed i rækket, start enhed 1.
-					//Nær ikke flere enheder:
+					//Når ikke flere enheder:
 					//Err cmd.
-					my_unit_count = UnitHandlerPointer->getUnitCount(); // hent antal af enheder
-					for ( unsigned char i = 1; i <= my_unit_count; i++){ // handle each unit ;)
-						UnitHandlerPointer->getUnitList(unitListArray); // get unit list
-						for(int j = 0; j<512; j++){
-							if(j%2 != 0){
-								if(unitListArray[j] == i){
-									unsigned char id = j - 1;
-									unitID = unitListArray[id];
+					my_unit_count = UnitHandlerPointer->getUnitCount();
+					if(my_unit_count == 0) // hvis der ikke er nogen enheder tilføjet systemet.
+					{
+						datablock[4] = 0x00;
+						for(int i = 0; i<512; i++)
+						{
+							
+							uartPointer->sendChar(datablock[i]);
+						}					
+					} 
+					else 
+					{// hent antal af enheder
+						for ( unsigned char i = 1; i <= my_unit_count; i++){ // handle each unit ;)
+							UnitHandlerPointer->getUnitList(unitListArray); // get unit list
+							for(int j = 0; j<512; j++){
+								if(j%2 != 0){
+									if(unitListArray[j] == i){
+										unsigned char id = j - 1;
+										unitID = unitListArray[id];
+										j = 512;
+									}
+								}
+							}
+							for ( int h = 1; h < 8; h++ )
+							{
+								UnitHandlerPointer->getTimeTable(h, unitID, datablock); // read unit timetable for 1 day.
+								for ( int t = 0; t < 512; t++){
+									uartPointer->sendChar(datablock[t]); // send 1 block of data.
 								}
 							}
 						}
-						for ( int h = 1; h < 8; h++ ){
-							UnitHandlerPointer->getTimeTable(h, unitID, datablock);
-						//	uartPointer->sendChar(0xF0);
-						//	uartPointer->sendChar(0xF0);
-							for ( int t = 0; t < 512; t++){
-								uartPointer->sendChar(datablock[t]);
-							}
-						//	uartPointer->sendChar(0x0F);
-						//	uartPointer->sendChar(0x0F);
+						// If no more data
+						for(int i = 0; i<4; i++){
+							uartPointer->sendChar(0xFA);
 						}
 					}
-					uartPointer->sendChar(0xFA);
-					uartPointer->sendChar(0xFA);
-					uartPointer->sendChar(0xFA);
-					uartPointer->sendChar(0xFA); // 0xFAFAFAFA
-					break;
-		
+				break;
 		case 7: // Enhedsinfo fra PC til styreboks 4 til 512 bytes; ack for hver byte efter cmd
-			
-			if(getData(datablock) > 3)
+			if(getData(datablock) == 2)
 			{
 				if(datablock[1] == 0x00)
 				{
@@ -194,20 +203,56 @@ bool PCinterface::handleCMD()
 					UnitHandlerPointer->AddUnit(datablock[0], datablock[1]);
 				}
 				uartPointer->sendChar(0x0F);
+			}
+			else {
+				for(int i = 0; i<4; i++){
+					uartPointer->sendChar(0xFA);
+				}
 			}		
-					break;
+		break;
 		case 8: // slet enhed 1 byte;
 			if(getData(datablock) == 1){
-				UnitHandlerPointer->RemoveUnit(datablock[0]);
+				if(UnitHandlerPointer->RemoveUnit(datablock[0]))
+				{
+					uartPointer->sendChar(0x0F);	
+				}
+				else
+				{
+					for(int i = 0; i<4; i++){
+						uartPointer->sendChar(0xFA);
+					}
+				}
 			}
-					break;
+			else
+			{
+				for(int i = 0; i<4; i++){
+					uartPointer->sendChar(0xFA);
+				}
+			}
+			break;
 		case 9: // Edit Unit
 				if(getData(datablock) == 3)
 				{
-					UnitHandlerPointer->editUnit(datablock[0], datablock[1], datablock[2]);
-				}					 
-					break;
+					if(UnitHandlerPointer->editUnit(datablock[0], datablock[1], datablock[2]))
+					{
+						uartPointer->sendChar(0xF0);	
+					}
+					else
+					{
+						for(int i = 0; i<4; i++){
+							uartPointer->sendChar(0xFA);
+						}
+					}
+				}		
+				else
+				{
+					for(int i = 0; i<4; i++){
+						uartPointer->sendChar(0xFA);
+					}	
+				}								 
+				break;
 		case 10: // update tidsplan 512 bytes;
+			uartPointer->sendChar(0x0F);
 			numberoffields = getData(datablock);
 			if(numberoffields)
 			{
@@ -225,7 +270,21 @@ bool PCinterface::handleCMD()
 					}
 					tempArray[offset] = datablock[i];
 				}
-				UnitHandlerPointer->UpdateTime(tempArray[0], tempArray);
+				if(UnitHandlerPointer->UpdateTime(tempArray[0], tempArray))
+				{
+					uartPointer->sendChar(0x0F);
+				}
+				else
+				{
+					for(int i = 0; i<4; i++){
+						uartPointer->sendChar(0xFA);
+					}
+				}
+			}
+			else {
+				for(int i = 0; i<4; i++){
+					uartPointer->sendChar(0xFA);
+				}
 			}
 			break;
 		case 11: // Set time 7 bytees;
@@ -233,6 +292,17 @@ bool PCinterface::handleCMD()
 			break;
 	}
 }
+//=============================================================
+// METHOD : returnStatus
+// DESCR. : takes the unitID and the recieved status and returns it to
+// the PC software through UART.
+//=============================================================
+void PCinterface::returnStatus( unsigned char unitID, unsigned char status )
+{
+	
+	// implementation missing.
+}
+
 
 
 

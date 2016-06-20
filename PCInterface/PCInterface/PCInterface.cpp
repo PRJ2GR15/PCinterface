@@ -12,12 +12,13 @@
 #include "UnitHandler/UnitHandler.h"
 #include <avr/interrupt.h>
 #include "PCinterface/PCinterface.h"
-#define F_CPU 16000000
+//#define F_CPU 16000000
 
 UART uart_obj(57600, 8, 'E');
 sdCard SD_obj(4000);
+rtc RTC_obj(0xD0, 400);
 UnitHandler handler_obj(&SD_obj);
-PCinterface PCIF_obj(&handler_obj ,&uart_obj);
+PCinterface PCIF_obj(&handler_obj ,&uart_obj, &RTC_obj);
 
 
 int main(void)
