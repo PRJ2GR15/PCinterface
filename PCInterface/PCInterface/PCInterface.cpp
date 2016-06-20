@@ -22,7 +22,7 @@ UnitHandler handler_obj(&SD_obj);
 X10 X10_obj(0x00, 0x00);
 PCinterface PCIF_obj(&handler_obj ,&uart_obj, &RTC_obj, &X10_obj);
 
-
+bool uart_com_waiting = false;
 int main(void)
 {
 	RTC_obj.setDate(21, 6, 16, 2);
@@ -34,12 +34,16 @@ int main(void)
 	sei();
     while(1)
     {
+		if(uart_com_waiting == true)
+		{
+			PCIF_obj.handleCMD();
+		}			
     }
 }
 
 ISR (USART0_RX_vect) // interrupt based uart
 {
-	PCIF_obj.handleCMD();
+	uart_com_waiting = true;
 	//uart_obj.sendChar(0xAB);
 }
 
