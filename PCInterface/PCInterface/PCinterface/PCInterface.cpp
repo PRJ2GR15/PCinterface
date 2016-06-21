@@ -26,6 +26,8 @@
 	rtc_obj_pointer = rtc_obj;
 	UnitHandlerPointer = Handler_obj;
 	x10Pointer = x10_obj;
+	unitsSent = 0;
+	nextunit = 0;
 }
 
 //=============================================================
@@ -173,17 +175,23 @@ bool PCinterface::handleCMD()
 					} 
 					else 
 					{// hent antal af enheder
-						for ( unsigned char i = 1; i <= my_unit_count; i++){ // handle each unit ;)
-							UnitHandlerPointer->getUnitList(unitListArray); // get unit list
-							for(int j = 0; j<512; j++){ 
-								if(j%2 != 0){
-									if(unitListArray[j] == i){
-										unsigned char id = j - 1;
-										unitID = unitListArray[id];
-										j = 512;
+						this->nextunit++;
+						if(this->unitsSent <= my_unit_count){
+							for ( int i = this->nextunit; i <= 255; i++){ // handle each unit ;)
+								UnitHandlerPointer->getUnitList(unitListArray); // get unit list
+								for(int j = 0; j<512; j++){ 
+									if(j%2 != 0){
+										if(unitListArray[j] == i){
+											unsigned char id = j - 1;
+											unitID = unitListArray[id];
+											break;
+										}
 									}
 								}
-							}
+								if(unitID >= this->nextunit){
+									break;
+								}
+							}						
 							for ( int h = 1; h < 8; h++ )
 							{
 								UnitHandlerPointer->getTimeTable(h, unitID, datablock); // read unit timetable for 1 day.
@@ -191,10 +199,16 @@ bool PCinterface::handleCMD()
 									uartPointer->sendChar(datablock[t]); // send 1 block of data.
 								}
 							}
+						this->unitsSent++;
 						}
-						// If no more data
-						for(int i = 0; i<4; i++){
-							uartPointer->sendChar(0xFA);
+						else
+						{
+							// If no more data
+							for(int i = 0; i<4; i++){
+								uartPointer->sendChar(0xFA);
+								this->nextunit = 0;
+								this->unitsSent = 0;
+							}
 						}
 					}
 				break;
@@ -261,7 +275,7 @@ bool PCinterface::handleCMD()
 		case 10: // update tidsplan 512 bytes;
 			uartPointer->sendChar(0x0F);
 			numberoffields = getData(datablock);
-			if(numberoffields)
+			if(numberoffields > 3)
 			{
 				unsigned char tempArray[512];
 				for( int q = 0; q < 512; q++){
@@ -284,7 +298,7 @@ bool PCinterface::handleCMD()
 				else
 				{
 					for(int i = 0; i<4; i++){
-						uartPointer->sendChar(0xFA);
+						uartPointer->sendChar(0xFB);
 					}
 				}
 			}

@@ -40,6 +40,8 @@ private:
 	bool needRunGetStatus;
 	unsigned char unitAdress;
 	bool currentUnitStatus;
+	unsigned char nextunit;
+	unsigned char unitsSent;
 };
 
 
