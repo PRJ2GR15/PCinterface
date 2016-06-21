@@ -25,26 +25,26 @@ PCinterface PCIF_obj(&handler_obj ,&uart_obj, &RTC_obj, &X10_obj);
 bool uart_com_waiting = false;
 int main(void)
 {
+	SD_obj.init();	
 	RTC_obj.setDate(21, 6, 16, 2);
 	RTC_obj.setTime(9, 0, 0);
 	unsigned char Array[512] = { 0 };
 	for (int i = 0; i < 101; i++){
 		SD_obj.writeBlock(i, Array);
+		_delay_ms(1);
 	}	
+	//uart_obj.sendChar(0xAA);
 	sei();
     while(1)
     {
-		if(uart_com_waiting == true)
-		{
-			PCIF_obj.handleCMD();
-		}			
+		
+		PCIF_obj.returnStatus();			
     }
 }
 
 ISR (USART0_RX_vect) // interrupt based uart
 {
-	uart_com_waiting = true;
-	//uart_obj.sendChar(0xAB);
+	PCIF_obj.handleCMD();
 }
 
 // interrupts used by x10.h
